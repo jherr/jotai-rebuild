@@ -38,7 +38,10 @@ export function atom<AtomType>(
 
     if (newValue && typeof (newValue as any).then === "function") {
       value = null as AtomType;
-      (newValue as any as Promise<AtomType>).then((resolvedValue) => {});
+      (newValue as any as Promise<AtomType>).then((resolvedValue) => {
+        value = resolvedValue;
+        subcribers.forEach((callback) => callback(value)); 
+      });
     } else {
       value = newValue;
     }
