@@ -14,6 +14,7 @@ function SalaryDisplay() {
 function App() {
   const [salary, setSalary] = useAtom(salaryAtom);
   const [bonus, setBonus] = useAtom(bonusAtom);
+
   const totalSalary = useAtomValue(totalSalaryAtom);
   const data = useAtomValue(dataAtom);
   const keys = useAtomValue(keysAtom);
@@ -21,13 +22,13 @@ function App() {
   return (
     <div>
       <div>
-        <input value={salary} onChange={(e) => setSalary(+e.target.value)} />
+        <input type="number" value={salary} onChange={(e) => setSalary(e.target.valueAsNumber)} />
       </div>
       <div>Salary: {salary}</div>
       <SalaryDisplay />
 
       <div>
-        <input value={bonus} onChange={(e) => setBonus(+e.target.value)} />
+        <input type="number" value={bonus} onChange={(e) => setBonus(e.target.valueAsNumber)} />
       </div>
       <div>Bonus: {bonus}</div>
 
