@@ -18,22 +18,16 @@ export function atom<AtomType>(
     typeof initialValue === "function" ? (null as AtomType) : initialValue;
 
   const subscribers = new Set<(newValue: AtomType) => void>();
-  const subscribed = new Set<Atom<any>>();
+
+  // keep the subscribe function out of get function to maintain reference, "Set" will make sure it is unique instead of tracking manually
+  function _subscribe (newValue) {
+    value = newValue;
+    computeValue();
+  }
 
   function get<Target>(atom: Atom<Target>) {
-    let currentValue = atom.get();
-    // console.log(atom._subscribers())
-
-    if (!subscribed.has(atom)) {
-      subscribed.add(atom);
-      atom.subscribe(function (newValue) {
-        if (currentValue === newValue) return;
-        currentValue = newValue;
-        computeValue();
-      });
-    }
-    
-    return currentValue;
+    atom.subscribe(_subscribe);
+    return atom.get();
   }
 
   async function computeValue() {
