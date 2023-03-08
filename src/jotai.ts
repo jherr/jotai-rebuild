@@ -14,35 +14,20 @@ type AtomGetter<AtomType> = (
 export function atom<AtomType>(
   initialValue: AtomType | AtomGetter<AtomType>
 ): Atom<AtomType> {
-  let value: AtomType =
-    typeof initialValue === "function" ? (null as AtomType) : initialValue;
+  let value: AtomType = initialValue as AtomType
 
   const subscribers = new Set<(newValue: AtomType) => void>();
-  const subscribed = new Set<Atom<any>>();
 
   function get<Target>(atom: Atom<Target>) {
-    let currentValue = atom.get();
-    // console.log(atom._subscribers())
-
-    if (!subscribed.has(atom)) {
-      subscribed.add(atom);
-      atom.subscribe(function (newValue) {
-        if (currentValue === newValue) return;
-        currentValue = newValue;
-        computeValue();
-      });
-    }
-    
-    return currentValue;
+    atom.subscribe(computeValue);
+    return atom.get();
   }
 
   async function computeValue() {
-    const newValue =
+    value =
       typeof initialValue === "function"
-        ? (initialValue as AtomGetter<AtomType>)(get)
+        ? await (initialValue as AtomGetter<AtomType>)(get)
         : value;
-    value = (null as AtomType);
-    value = await newValue;
     subscribers.forEach((callback) => callback(value));
   }
 
