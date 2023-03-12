@@ -4,7 +4,6 @@ interface Atom<AtomType> {
   get: () => AtomType;
   set: (newValue: AtomType) => void;
   subscribe: (callback: (newValue: AtomType) => void) => () => void;
-  _subscribers: () => number;
 }
 
 type AtomGetter<AtomType> = (
@@ -18,30 +17,30 @@ export function atom<AtomType>(
     typeof initialValue === "function" ? (null as AtomType) : initialValue;
 
   const subscribers = new Set<(newValue: AtomType) => void>();
-  const subscribed = new Set<Atom<any>>();
+  const unsubscribers = new Set<() => void>();
 
   function get<Target>(atom: Atom<Target>) {
     let currentValue = atom.get();
-    // console.log(atom._subscribers())
 
-    if (!subscribed.has(atom)) {
-      subscribed.add(atom);
-      atom.subscribe(function (newValue) {
-        if (currentValue === newValue) return;
-        currentValue = newValue;
-        computeValue();
-      });
-    }
-    
+    const unsubscribe = atom.subscribe((newValue) => {
+      if (currentValue === newValue) return;
+      computeValue();
+    });
+    unsubscribers.add(unsubscribe);
+
     return currentValue;
   }
 
   async function computeValue() {
+    unsubscribers.forEach((unsubscribe) => {
+      unsubscribe();
+      unsubscribers.delete(unsubscribe);
+    });
     const newValue =
       typeof initialValue === "function"
         ? (initialValue as AtomGetter<AtomType>)(get)
         : value;
-    value = (null as AtomType);
+    value = null as AtomType;
     value = await newValue;
     subscribers.forEach((callback) => callback(value));
   }
@@ -52,7 +51,7 @@ export function atom<AtomType>(
     get: () => value,
     set: (newValue) => {
       value = newValue;
-      computeValue();
+      subscribers.forEach((callback) => callback(value));
     },
     subscribe: (callback) => {
       subscribers.add(callback);
@@ -60,7 +59,6 @@ export function atom<AtomType>(
         subscribers.delete(callback);
       };
     },
-    _subscribers: () => subscribers.size,
   };
 }
 
