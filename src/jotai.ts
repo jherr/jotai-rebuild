@@ -32,8 +32,16 @@ export function atom<AtomType>(
         computeValue();
       });
     }
-    
+
     return currentValue;
+  }
+
+  function getInitialType() {
+    const _type = typeof initialValue;
+    if (initialValue?.then && typeof initialValue.then === "function") {
+      return "promise";
+    }
+    return _type;
   }
 
   async function computeValue() {
@@ -41,12 +49,13 @@ export function atom<AtomType>(
       typeof initialValue === "function"
         ? (initialValue as AtomGetter<AtomType>)(get)
         : value;
-    value = (null as AtomType);
+
+    value = null as AtomType;
     value = await newValue;
     subscribers.forEach((callback) => callback(value));
   }
 
-  computeValue();
+  if (["promise", "function"].includes(getInitialType())) computeValue();
 
   return {
     get: () => value,
